@@ -68,6 +68,9 @@
   perspective: 1400px;
 
   overflow: hidden;
+
+  /* 모바일추가 */
+   touch-action: pan-y;
 }
 
 

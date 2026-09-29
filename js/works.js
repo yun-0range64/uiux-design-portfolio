@@ -319,7 +319,85 @@ $(window).on("mouseleave", function () {
 
 });
 
+/* =========================
+   MOBILE SWIPE
+========================= */
+
+let touchStartX = 0;
+let touchStartY = 0;
+
+const swipeThreshold = 50;
+
+
+/* 손가락 터치 시작 */
+$(".gallery-viewport").on("touchstart", function (e) {
+
+  const touch = e.originalEvent.touches[0];
+
+  touchStartX = touch.clientX;
+  touchStartY = touch.clientY;
+
+});
+
+
+/* 손가락 뗐을 때 */
+$(".gallery-viewport").on("touchend", function (e) {
+
+  const touch = e.originalEvent.changedTouches[0];
+
+  const touchEndX = touch.clientX;
+  const touchEndY = touch.clientY;
+
+
+  const diffX =
+    touchEndX - touchStartX;
+
+  const diffY =
+    touchEndY - touchStartY;
+
+
+  /*
+    세로 스크롤보다
+    가로 움직임이 클 때만 스와이프로 판단
+  */
+  if (Math.abs(diffX) <= Math.abs(diffY)) {
+    return;
+  }
+
+
+  /*
+    너무 짧게 움직인 건 무시
+  */
+  if (Math.abs(diffX) < swipeThreshold) {
+    return;
+  }
+
+
+  /*
+    ← 왼쪽으로 밀기
+    다음 작품
+  */
+  if (diffX < 0) {
+
+    goToProject(1);
+
+  }
+
+
+  /*
+    → 오른쪽으로 밀기
+    이전 작품
+  */
+  else {
+
+    goToProject(-1);
+
+  }
+
+});
+
   // 처음 상태
   updateCarousel(0);
 
 });
+
