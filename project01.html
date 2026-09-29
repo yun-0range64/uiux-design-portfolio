@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>Project 01 | Yunju Portfolio</title>
+
+  <!-- 기존 공통 CSS가 있다면 유지 -->
+  <link
+    rel="stylesheet"
+    href="./css/style.css"
+  >
+
+  <!-- 프로젝트 상세 CSS -->
+  <link
+    rel="stylesheet"
+    href="./css/project.css"
+  >
+</head>
+
+
+<body>
+
+  <div class="project-background">
+
+    <main class="project-window">
+
+     <header class="project-header">
+
+  <a
+    href="./works.html"
+    class="project-close"
+    aria-label="Back to works"
+  >
+    <span></span>
+    <span></span>
+  </a>
+
+</header>
+
+
+      <!-- INTRO -->
+
+      <section class="project-intro">
+
+        <p class="project-number">
+          PROJECT 01
+        </p>
+
+        <h1>
+          Soody: 누구나 쉽게 시작하는 AI 수어 튜터링 어플리케이션
+        </h1>
+
+        <div class="project-meta">
+          <span>2023 한국디자인학회 가을 국제학술대회</span>
+          <span>DATE ㅣ 2023.01 ~ 2023.09</span>
+          <span>ROLE ㅣ 디자인 100%, 개발 100%</span>
+        </div>
+
+      </section>
+
+
+      <!-- PORTFOLIO -->
+
+      <section class="project-images">
+
+        <img
+          src="./assets/images/project01/01.png"
+          alt=""
+        >
+
+        <img
+          src="./assets/images/project01/02.png"
+          alt=""
+        >
+
+        <img
+          src="./assets/images/project01/03.png"
+          alt=""
+        >
+
+      </section>
+
+
+      <!-- LIVE DEMO -->
+
+     <section class="project-demo">
+
+  <!-- LIVE DEMO -->
+  <div class="demo-content">
+
+    <p class="section-label">
+      INTERACTIVE EXPERIENCE
+    </p>
+
+    <h2>
+      라이브 데모
+    </h2>
+
+    <p class="demo-description">
+      실제 데모를 직접 체험해보실 수 있습니다
+    </p>
+.
+    <a
+      href="https://example.com"
+      target="_blank"
+      rel="noopener noreferrer"
+      class="demo-button"
+    >
+      <span>VIEW LIVE DEMO</span>
+      <span>↗</span>
+    </a>
+
+  </div>
+
+
+  <!-- RESEARCH PAPER -->
+  <div class="demo-content">
+
+    <p class="section-label">
+      RESEARCH
+    </p>
+
+    <h2>
+      논문 다운로드
+    </h2>
+
+    <p class="demo-description">
+      연구 과정과 결과를 논문에서 확인할 수 있습니다.
+    </p>
+
+    <a
+      href="논문링크"
+      target="_blank"
+      rel="noopener noreferrer"
+      class="demo-button"
+    >
+      <span>DOWNLOAD PAPER</span>
+      <span>↗</span>
+    </a>
+
+  </div>
+
+</section>
+
+        
+
+      </section>
+
+
+      <!-- COMMENTS -->
+
+      <section class="comments">
+
+        <div class="comments-header">
+
+          <div>
+            <p class="section-label">
+              COMMENTS
+            </p>
+
+            <h2>
+              Leave a comment.
+            </h2>
+          </div>
+
+          <span
+            class="comment-count"
+            id="commentCount"
+          >
+            00
+          </span>
+
+        </div>
+
+
+        <form
+          class="comment-form"
+          id="commentForm"
+        >
+
+          <div class="comment-field">
+
+            <label for="nickname">
+              NICKNAME
+            </label>
+
+            <input
+              id="nickname"
+              type="text"
+              maxlength="20"
+              placeholder="닉네임을 입력해주세요"
+            >
+
+          </div>
+
+
+          <div class="comment-field">
+
+            <label for="comment">
+              COMMENT
+            </label>
+
+            <textarea
+              id="comment"
+              maxlength="300"
+              placeholder="이 프로젝트에 대한 의견을 남겨주세요."
+            ></textarea>
+
+          </div>
+
+
+          <div class="comment-submit-area">
+
+            <span class="character-count">
+              <span id="characterCount">0</span>
+              / 300
+            </span>
+
+            <button
+              type="submit"
+              class="comment-submit"
+            >
+              POST →
+            </button>
+
+          </div>
+
+        </form>
+
+
+        <div
+          class="comment-list"
+          id="commentList"
+        ></div>
+
+      </section>
+
+
+      <footer class="project-footer">
+
+        <a
+          href="./works.html"
+          class="back-to-works"
+        >
+          ← BACK TO WORKS
+        </a>
+
+        <span>
+          © 2026 YUNJU
+        </span>
+
+      </footer>
+
+    </main>
+
+  </div>
+
+
+  <!-- 얘만 창 밖 -->
+
+  <button
+    class="back-to-top"
+    id="backToTop"
+    type="button"
+  >
+    TOP ↑
+  </button>
+
+
+  <script
+    defer
+    src="./js/project.js"
+  ></script>
+
+</body>
+  <script src="./js/project.js"></script>
+
+</body>
+</html>
