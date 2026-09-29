@@ -14,7 +14,7 @@ $(document).ready(function () {
 
 
   /* =========================================================
-     SETTINGS getWrappedX(index);
+     SETTINGS previousX = e.clientX;
   ========================================================= */
 
   // 이미지 사이 간격
@@ -799,23 +799,22 @@ dragging = true;
          즉시 반대로 휨.
       ========================================= */
 
-      const deltaX =
-        e.clientX -
-        previousX;
+     const deltaX = e.clientX - previousX;
+previousX = e.clientX;
 
+// 모바일에서는 곡률 감도를 더 강하게
+const isMobile = window.innerWidth <= 768;
 
-      previousX =
-        e.clientX;
+const bendSensitivity = isMobile
+  ? 15
+  : BEND_SENSITIVITY;
 
-
-      targetBendStrength =
-        THREE.MathUtils.clamp(
-          deltaX /
-          BEND_SENSITIVITY,
-          -1,
-          1
-        ) *
-        MAX_BEND;
+targetBendStrength =
+  THREE.MathUtils.clamp(
+    deltaX / bendSensitivity,
+    -1,
+    1
+  ) * MAX_BEND;
 
     }
   );
