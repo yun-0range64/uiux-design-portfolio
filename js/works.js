@@ -1,403 +1,1193 @@
+
+import * as THREE from "three";
+
+console.log("Three.js 연결:", THREE.REVISION);
+
+
+
 $(document).ready(function () {
 
+  const $viewport = $(".gallery-viewport");
   const $cards = $(".project-card");
+
   const total = $cards.length;
 
-  let currentIndex = 0;
-  let currentRotation = 0;
-  let targetRotation = 0;
 
-  let isAnimating = false;
-  let canTrigger = true;
+  /* =========================================================
+     SETTINGS getWrappedX(index);
+  ========================================================= */
 
-  const angleStep = 360 / total;
+  // 이미지 사이 간격
+  const CARD_GAP = 70;
+
+  // 드래그 감도
+  const DRAG_SENSITIVITY = 1;
+
+  // 화면 중앙에서 휘는 영역의 폭(px)
+  const BEND_AREA = 650;
+
+  // 실제 Z축으로 들어가고 나오는 깊이
+  const MAX_BEND = 1.8;
+
+  // 드래그 방향 반응 속도
+  const BEND_SENSITIVITY = 90;
+
+  // 스냅 속도
+  const SNAP_DURATION = 600;
 
 
-  // 화면에 맞는 캐러셀 가로 범위 const z
-  function getRadius() {
-    return window.innerWidth * 0.34;
+  /* =========================================================
+     STATEpointerdown
+  ========================================================= */
+
+  let dragging = false;
+  let snapping = false;
+
+  let clickedCard = null;
+
+  let dragStartX = 0;
+  let previousX = 0;
+
+  let dragStartOffset = 0;
+
+  let currentOffset = 0;
+  let targetOffset = 0;
+
+  // 실제 현재 곡률
+  let bendStrength = 0;
+
+  // 목표 곡률
+  let targetBendStrength = 0;
+// 가운데 카드 확대
+let centerScale = 1;
+let targetCenterScale = 1;
+
+const CENTER_SCALE = 1.12;
+
+  /* =========================================================
+     THREE.JS
+  ========================================================= */
+
+  const threeItems = [];
+
+
+  $(".three-thumbnail").each(function () {
+
+    const container = this;
+
+    const imagePath =
+      container.dataset.image;
+
+
+    /* -------------------------
+       SCENE
+    ------------------------- */
+
+    const scene =
+      new THREE.Scene();
+
+
+    /* -------------------------
+       PERSPECTIVE CAMERA
+
+       ★ 이번 변경 핵심
+    ------------------------- */
+
+    const camera =
+      new THREE.PerspectiveCamera(
+        45,
+        16 / 9,
+        0.1,
+        100
+      );
+
+    /*
+      4 × 2.25 Plane이
+      canvas를 거의 꽉 채우는 거리
+    */
+    camera.position.set(
+      0,
+      0,
+      3.8
+    );
+
+
+    /* -------------------------
+       RENDERER
+    ------------------------- */
+
+    const renderer =
+      new THREE.WebGLRenderer({
+        alpha: true,
+        antialias: true
+      });
+
+
+    renderer.setPixelRatio(
+      Math.min(
+        window.devicePixelRatio,
+        2
+      )
+    );
+
+
+    renderer.setSize(
+      container.clientWidth,
+      container.clientHeight
+    );
+
+
+    renderer.setClearColor(
+      0x000000,
+      0
+    );
+
+
+    container.appendChild(
+      renderer.domElement
+    );
+
+
+    /* -------------------------
+       TEXTURE
+    ------------------------- */
+
+    const loader =
+      new THREE.TextureLoader();
+
+
+    const texture =
+      loader.load(imagePath);
+
+
+    texture.colorSpace =
+      THREE.SRGBColorSpace;
+
+
+    /* -------------------------
+       GEOMETRY
+
+       가로 segment를 많이 나눠서
+       중앙 굴곡을 부드럽게 만듦
+    ------------------------- */
+
+    const geometry =
+      new THREE.PlaneGeometry(
+        4,
+        2.25,
+        100,
+        20
+      );
+
+
+    /*
+      원본 vertex 위치 저장
+    */
+
+    const originalPositions =
+      geometry.attributes.position
+        .array.slice();
+
+
+    /* -------------------------
+       MATERIAL
+    ------------------------- */
+
+    const material =
+      new THREE.MeshBasicMaterial({
+        map: texture,
+        side: THREE.DoubleSide,
+        transparent: true
+      });
+
+
+    /* -------------------------
+       PLANE
+    ------------------------- */
+
+    const plane =
+      new THREE.Mesh(
+        geometry,
+        material
+      );
+
+
+    scene.add(plane);
+
+
+    /* -------------------------
+       SAVE
+    ------------------------- */
+
+    threeItems.push({
+
+      container,
+
+      card:
+        container.closest(
+          ".project-card"
+        ),
+
+      scene,
+
+      camera,
+
+      renderer,
+
+      geometry,
+
+      originalPositions,
+
+      plane
+
+    });
+
+  });
+
+
+  /* =========================================================
+     CARD SIZE
+  ========================================================= */
+
+  function getCardWidth() {
+
+  if (!$cards.length) {
+    return 400;
+  }
+
+  // scale() 영향을 받지 않는 원래 CSS 너비
+  return $cards.first()[0].offsetWidth;
+}
+
+  function getStep() {
+
+    return (
+      getCardWidth() +
+      CARD_GAP
+    );
+
   }
 
 
-  // 부드러운 ease   
- function smoothWhip(t) {
-  return 1 - Math.pow(1 - t, 4);
+  /* =========================================================
+     CARD POSITION
+  ========================================================= */
+
+  function getWrappedX(index) {
+
+  const step = getStep();
+  const loopWidth = step * total;
+
+  let x =
+    index * step +
+    currentOffset;
+
+  /*
+    화면 중앙을 기준으로
+    가장 가까운 반복 위치로 재배치
+
+    06 다음에 01
+    01 이전에 06
+  */
+  x =
+    THREE.MathUtils.euclideanModulo(
+      x + loopWidth / 2,
+      loopWidth
+    ) -
+    loopWidth / 2;
+
+  return x;
 }
 
 
-  // 카드 위치 업데이트
-  function updateCarousel(rotation) {
+function updateCards() {
 
-    const radius = getRadius();
-
-    $cards.each(function (index) {
-
-      const $card = $(this);
-
-      const angle =
-        index * angleStep + rotation;
-
-      const rad =
-        angle * Math.PI / 180;
+  const step = getStep();
 
 
-      // 좌우 이동
-      const x =
-        Math.sin(rad) * radius;
+  /*
+    =========================================
+    화면 중앙에 가장 가까운 카드 딱 1개 찾기
+    =========================================
+  */
+
+  let centerIndex = 0;
+  let smallestDistance = Infinity;
 
 
-      // 앞뒤 깊이는 아주 약하게
-      const z =
-        Math.cos(rad) * 80;
+  $cards.each(function (index) {
+
+    const cardX =
+      getWrappedX(index);
+
+      
+
+    const distance =
+      Math.abs(cardX);
 
 
-      // 중앙에 얼마나 가까운지
-      // 1 = 완전 중앙
-      // 0 = 뒤쪽
+    if (distance < smallestDistance) {
 
-const focus =
-  (Math.cos(rad) + 1) / 2;
+      smallestDistance =
+        distance;
+
+      centerIndex =
+        index;
+
+    }
+
+  });
 
 
-// 중앙 근처에서 확대가 더 강하게 느껴지도록 easeInOutCubic(t
-const focusScale =
-  Math.pow(focus, 2);
+  /*
+    =========================================
+    실제 카드 배치
+    =========================================
+  */
+
+  $cards.each(function (index) {
+
+   let x =
+  getWrappedX(index);
+
+  // 곡률에 따라 카드 간격도 같이 보정
+
+let spacingScale;
+
+if (bendStrength >= 0) {
+
+  // 커질 때 → 간격 넓힘
+  const bendRatio =
+    bendStrength / MAX_BEND;
+
+  spacingScale =
+    1 + bendRatio * 0.40;
+
+} else {
+
+  // 줄어들 때 → 간격 좁힘
+  const bendRatio =
+    Math.abs(bendStrength) / MAX_BEND;
+
+  spacingScale =
+    1 - bendRatio * 0.25;
+}
+
+x *= spacingScale;
+/*
+  =========================================
+  곡률에 따른 카드 간격 보정
+  =========================================
+
+  이미지가 앞으로 나오면서 커질수록
+  카드 중심도 서로 멀어짐.
+
+  이미지가 뒤로 들어가면서 작아질수록
+  카드 중심도 서로 가까워짐.
+*/
+
+    const distance =
+      Math.abs(x);
 
 
-// ★ 중앙으로 이동하면서 점점 커짐
+    const normalizedDistance =
+      Math.min(
+        distance /
+        (window.innerWidth * 0.72),
+        1
+      );
+
+
+    const brightness =
+      1 -
+      normalizedDistance * 0.58;
+
+
+    const opacity =
+      1 -
+      normalizedDistance * 0.42;
+
+
+    /*
+  중앙에 가장 가까운 카드인지 확인
+*/
+const isCenter =
+  index === centerIndex;
+
+
+/*
+  드래그 중에는 전부 1배.
+
+  드래그가 끝난 뒤
+  중앙 카드만 centerScale 적용.
+*/
+const isFlat =
+  Math.abs(bendStrength) < 0.03;
+
 const scale =
-  0.70 + focusScale * 0.40;
+  !dragging &&
+  !snapping &&
+  isFlat &&
+  isCenter
+    ? centerScale
+    : 1;
 
-      /*
-        중앙 작품 밝게
-        양옆은 살짝 어둡게
-      */
-
-      const brightness =
-        0.45 + focus * 0.55;
-
-
-      const opacity =
-        0.35 + focus * 0.65;
-
-
-      $card.css({
+$(this).css({
 
   transform: `
     translate3d(
       calc(-50% + ${x}px),
       -50%,
-      ${z}px
+      0
     )
     scale(${scale})
   `,
 
-  filter:
-    `brightness(${brightness})`,
+      filter:
+        `brightness(${brightness})`,
 
-  opacity: opacity,
+      opacity,
 
-  zIndex:
-    Math.round(focus * 100)
+      zIndex:
+        Math.round(
+          100 -
+          normalizedDistance * 50
+        )
 
-});
+    });
 
-      // 현재 중앙 작품
-      if (focus > 0.95) {
 
-        $card.addClass("active");
+    if (
+      distance <
+      step * 0.45
+    ) {
 
-      } else {
+      $(this).addClass("active");
 
-        $card.removeClass("active");
+    } else {
+
+      $(this).removeClass("active");
+
+    }
+
+  });
+
+}
+
+
+  /* =========================================================
+     ★ SCREEN CENTER BEND
+  ========================================================= */
+
+  function updateBend() {
+
+    /*
+      화면 전체의 정확한 중앙
+
+              ↓
+
+      ────────╲____╱────────
+    */
+
+    const screenCenterX =
+      window.innerWidth / 2;
+
+
+    threeItems.forEach(function (item) {
+
+      const rect =
+        item.container
+          .getBoundingClientRect();
+
+
+      const positions =
+        item.geometry
+          .attributes
+          .position;
+
+
+      const original =
+        item.originalPositions;
+
+
+      /*
+        Plane 좌표 범위
+
+        -2 -------- 0 -------- +2
+      */
+
+      const halfPlaneWidth = 2;
+
+
+      for (
+        let i = 0;
+        i < positions.count;
+        i++
+      ) {
+
+        const arrayIndex =
+          i * 3;
+
+
+        const originalX =
+          original[arrayIndex];
+
+
+        const originalY =
+          original[arrayIndex + 1];
+
+
+        /*
+          Three.js vertex 위치를
+
+          0 ~ 1 로 변환
+        */
+
+        const localPercent =
+          (
+            originalX +
+            halfPlaneWidth
+          ) /
+          (
+            halfPlaneWidth * 2
+          );
+
+
+        /*
+          해당 vertex가 실제 화면에서
+          몇 px 위치인지 계산
+        */
+
+        const vertexScreenX =
+          rect.left +
+          rect.width *
+          localPercent;
+
+
+        /*
+          화면 중앙으로부터 거리
+
+          중앙 = 0
+        */
+
+        const distance =
+          vertexScreenX -
+          screenCenterX;
+
+
+        const absDistance =
+          Math.abs(distance);
+
+
+        /*
+          중앙 ± BEND_AREA 안쪽만
+          휘게 함
+        */
+
+        let influence = 0;
+
+
+        if (
+          absDistance <
+          BEND_AREA
+        ) {
+
+          /*
+            0 ~ 1
+
+            중앙에서:
+            1
+
+            BEND_AREA 끝에서:
+            0
+          */
+
+          const t =
+            absDistance /
+            BEND_AREA;
+
+
+          /*
+            부드러운 Cosine Curve
+
+                    1
+                   ╭╮
+                 ╱    ╲
+               ╱        ╲
+            0 ─            ─ 0
+          */
+
+          influence =
+            (
+              Math.cos(
+                t *
+                Math.PI
+              ) +
+              1
+            ) / 2;
+
+        }
+
+
+        /*
+          ★ 핵심
+
+          PerspectiveCamera이므로
+          Z가 움직이면 실제 화면에서
+          확대/축소되어 곡면으로 보임.
+
+          +Z = 카메라 방향
+          -Z = 화면 안쪽
+        */
+
+        const z =
+          influence *
+          bendStrength;
+
+
+        /*
+          ★ 아주 약한 X 압축까지 추가
+
+          Z만 움직였을 때보다
+          띠가 실제로 말리는 느낌을 줌.
+        */
+
+        const centerPull =
+          influence *
+          bendStrength *
+          0.10;
+
+
+        let x =
+          originalX;
+
+
+        /*
+          화면 중앙의 왼쪽 vertex면
+          오른쪽으로 조금 당기고,
+
+          오른쪽 vertex면
+          왼쪽으로 조금 당김.
+        */
+
+        if (
+          distance < 0
+        ) {
+
+          x += centerPull;
+
+        } else {
+
+          x -= centerPull;
+
+        }
+
+
+        positions.setXYZ(
+          i,
+          x,
+          originalY,
+          z
+        );
 
       }
+
+
+      positions.needsUpdate =
+        true;
 
     });
 
   }
 
 
-  // 특정 프로젝트로 이동
-  function goToProject(direction) {
-
-    if (isAnimating) return;
-
-    isAnimating = true;
+  /* =========================================================
+     EDGE RESISTANCEpointermove
+  ========================================================= */
 
 
-    /*
-      direction
-
-      1  = 다음 작품
-      -1 = 이전 작품
-    */
-
-    currentIndex += direction;
 
 
-    // 무한 순환
-    if (currentIndex >= total) {
-      currentIndex = 0;
+  /* =========================================================
+     POINTER DOWN
+  ========================================================= */
+
+  $viewport.on(
+    "pointerdown",
+    function (e) {
+
+      if (snapping) {
+        return;
+      }
+
+// ★ 처음 누른 카드 기억
+    clickedCard =
+      $(e.target).closest(".project-card")[0] || null;
+
+
+dragging = true;
+
+
+
+      $viewport.addClass(
+        "dragging"
+      );
+
+
+      dragStartX =
+        e.clientX;
+
+
+      previousX =
+        e.clientX;
+
+
+      dragStartOffset =
+        currentOffset;
+
+
+      targetOffset =
+        currentOffset;
+
+
+      this.setPointerCapture(
+        e.originalEvent.pointerId
+      );
+
     }
+  );
 
-    if (currentIndex < 0) {
-      currentIndex = total - 1;
+
+  /* =========================================================
+     POINTER MOVE
+  ========================================================= */
+
+  $viewport.on(
+    "pointermove",
+    function (e) {
+
+      if (!dragging) {
+        return;
+      }
+
+
+      const dragDistance =
+        e.clientX -
+        dragStartX;
+
+
+      /*
+        캐러셀 좌우 이동
+      */
+
+      let nextOffset =
+        dragStartOffset +
+        dragDistance *
+        DRAG_SENSITIVITY;
+
+
+     targetOffset = nextOffset;
+
+
+      /* =========================================
+         ★ 휘어지는 방향let nearestIndex =
+
+         이번에는 전체 드래그 거리보다
+         "현재 마우스 움직임 방향" 사용.
+
+         그래서 방향을 바꾸면
+         즉시 반대로 휨.
+      ========================================= */
+
+      const deltaX =
+        e.clientX -
+        previousX;
+
+
+      previousX =
+        e.clientX;
+
+
+      targetBendStrength =
+        THREE.MathUtils.clamp(
+          deltaX /
+          BEND_SENSITIVITY,
+          -1,
+          1
+        ) *
+        MAX_BEND;
+
     }
+  );
 
 
-    const startRotation =
-      currentRotation;
+  /* =========================================================
+     RELEASE
+  ========================================================= */
+
+  function releaseDrag(e) {
+
+  if (!dragging) {
+    return;
+  }
+
+  // 처음 누른 위치와 뗀 위치 차이
+  const moved =
+    Math.abs(e.clientX - dragStartX);
 
 
-    /*
-      오른쪽에 마우스 →
-      다음 작품이 중앙으로 오도록
-    */
+  dragging = false;
 
-    targetRotation =
-      currentRotation -
-      direction * angleStep;
+  $viewport.removeClass(
+    "dragging"
+  );
+
+  targetBendStrength = 0;
+
+  /*
+    =========================================
+    ★ 거의 움직이지 않았으면 = 클릭
+    =========================================
+  */
+
+if (moved < 6) {
+
+  targetBendStrength = 0;
+
+  if (
+    clickedCard &&
+    clickedCard.dataset.link
+  ) {
+
+    window.location.href =
+      clickedCard.dataset.link;
+
+    return;
+  }
+}
+
+
+  /*
+    =========================================
+    실제로 움직였으면 = 드래그
+    =========================================
+  */
+
+  targetBendStrength = 0;
+
+  const step =
+    getStep();
+
+  const destination =
+    Math.round(
+      targetOffset / step
+    ) * step;
+
+  startSnap(
+    destination
+  );
+
+}
+
+  $viewport.on(
+    "pointerup pointercancel",
+    releaseDrag
+  );
+
+
+  /* =========================================================
+     SNAP
+  ========================================================= */
+
+  function startSnap(
+    destination
+  ) {
+
+    snapping = true;
+
+
+    const start =
+      currentOffset;
+
+
+    const difference =
+      destination -
+      start;
 
 
     const startTime =
       performance.now();
 
 
-    // 이동 시간
-    const duration = 850;
-
-
-    function animate(time) {
-
-      const elapsed =
-        time - startTime;
-
+    function snapFrame(time) {
 
       const progress =
         Math.min(
-          elapsed / duration,
+          (
+            time -
+            startTime
+          ) /
+          SNAP_DURATION,
           1
         );
 
 
+      /*
+        easeOutQuart
+      */
+
       const eased =
-  smoothWhip(progress);
+        1 -
+        Math.pow(
+          1 - progress,
+          4
+        );
 
 
-      const rotation =
-        startRotation +
-        (targetRotation - startRotation)
-        * eased;
+      currentOffset =
+        start +
+        difference *
+        eased;
 
 
-      updateCarousel(rotation);
+      targetOffset =
+        currentOffset;
 
 
-      if (progress < 1) {
+      /*
+        스냅되는 동안
+        굴곡은 평평하게 복귀
+      */
 
-        requestAnimationFrame(animate);
+      targetBendStrength = 0;
+
+
+      if (
+        progress < 1
+      ) {
+
+        requestAnimationFrame(
+          snapFrame
+        );
 
       } else {
 
-        currentRotation =
-          targetRotation;
+        currentOffset =
+          destination;
 
-        isAnimating = false;
+
+        targetOffset =
+          destination;
+
+
+        snapping = false;
 
       }
 
     }
 
 
-    requestAnimationFrame(animate);
+    requestAnimationFrame(
+      snapFrame
+    );
 
   }
 
-  let mouseZone = "center";
-  let autoTimer = null;
+
+  /* =========================================================
+     MAIN LOOP
+  ========================================================= */
+
+  function animate() {
+
+    requestAnimationFrame(
+      animate
+    );
 
 
-  // 마우스 위치 감지
-$(window).on("mousemove", function (e) {
+    /*
+      캐러셀 위치
+    */
 
-  const ratio =
-    e.clientX / window.innerWidth;
+    if (dragging) {
 
-
-  // 왼쪽
-  if (ratio <= 0.35) {
-
-    if (mouseZone !== "left") {
-
-      mouseZone = "left";
-
-      startAutoMove(-1);
+      currentOffset +=
+        (
+          targetOffset -
+          currentOffset
+        ) *
+        0.24;
 
     }
 
-  }
+
+    /*
+      곡률도 부드럽게 따라옴
+    */
+
+    bendStrength +=
+    
+      (
+        targetBendStrength -
+        bendStrength
+      ) *
+      0.18;
+
+      /*
+  =========================================
+  가운데 카드 확대 애니메이션
+  =========================================
+
+  드래그 중 / 스냅 중
+  → 원래 크기
+
+  가운데 정렬 완료
+  → 1.12배로 부드럽게 확대
+*/
+
+/*
+  곡률까지 거의 완전히 풀린 다음에만
+  중앙 카드 확대 시작
+*/
+
+const isFlat =
+  Math.abs(bendStrength) < 0.03;
 
 
-  // 오른쪽
-  else if (ratio >= 0.65) {
+if (
+  !dragging &&
+  !snapping &&
+  isFlat
+) {
 
-    if (mouseZone !== "right") {
+  targetCenterScale =
+    CENTER_SCALE;
 
-      mouseZone = "right";
+} else {
 
-      startAutoMove(1);
-
-    }
-
-  }
-
-
-  // 가운데
-  else {
-
-    mouseZone = "center";
-
-    stopAutoMove();
-
-  }
-
-});
-
-function startAutoMove(direction) {
-
-  stopAutoMove();
-
-
-  // 들어가자마자 바로 한 번 이동
-  if (!isAnimating) {
-
-    goToProject(direction);
-
-  }
-
-
-  /*
-    마우스가 계속 해당 영역에 있으면
-    반복 이동
-  */
-
-  autoTimer = setInterval(function () {
-
-    if (
-      mouseZone !== "center" &&
-      !isAnimating
-    ) {
-
-      goToProject(direction);
-
-    }
-
-  }, 1200);
+  targetCenterScale =
+    1;
 
 }
 
 
-function stopAutoMove() {
+/*
+  스르륵 확대 / 축소
+*/
 
-  if (autoTimer) {
+centerScale +=
+  (
+    targetCenterScale -
+    centerScale
+  ) *
+  0.08;
 
-    clearInterval(autoTimer);
+    /*
+      손을 멈추고 있는 동안에도
+      곡률이 너무 오래 유지되지 않도록
+      살짝 감소
+    */
 
-    autoTimer = null;
+    if (dragging) {
+
+      targetBendStrength *=
+        0.94;
+
+    }
+
+
+    updateCards();
+
+    updateBend();
+
+
+    /*
+      Three 렌더링
+    */
+
+    threeItems.forEach(
+      function (item) {
+
+        item.renderer.render(
+          item.scene,
+          item.camera
+        );
+
+      }
+    );
 
   }
 
-}
+
+  /* =========================================================
+     RESIZE
+  ========================================================= */
+
+  $(window).on(
+    "resize",
+    function () {
+
+      threeItems.forEach(
+        function (item) {
+
+          const width =
+            item.container
+              .clientWidth;
 
 
-$(window).on("mouseleave", function () {
+          const height =
+            item.container
+              .clientHeight;
 
-  mouseZone = "center";
 
-  stopAutoMove();
+          item.renderer.setSize(
+            width,
+            height
+          );
+
+
+          item.camera.aspect =
+            width /
+            height;
+
+
+          item.camera
+            .updateProjectionMatrix();
+
+        }
+      );
+
+
+      /*
+        가장 가까운 프로젝트를
+        다시 중앙 정렬
+      */
+
+     const step =
+  getStep();
+
+const destination =
+  Math.round(
+    currentOffset / step
+  ) * step;
+
+currentOffset =
+  destination;
+
+targetOffset =
+  destination;
+
+    }
+  );
+
+ 
+
+/* =========================================================
+   START
+========================================================= */
+
+updateCards();
+
+animate();
 
 });
-
-/* =========================
-   MOBILE SWIPE
-========================= */
-
-let touchStartX = 0;
-let touchStartY = 0;
-
-const swipeThreshold = 50;
-
-
-/* 손가락 터치 시작 */
-$(".gallery-viewport").on("touchstart", function (e) {
-
-  const touch = e.originalEvent.touches[0];
-
-  touchStartX = touch.clientX;
-  touchStartY = touch.clientY;
-
-});
-
-
-/* 손가락 뗐을 때 */
-$(".gallery-viewport").on("touchend", function (e) {
-
-  const touch = e.originalEvent.changedTouches[0];
-
-  const touchEndX = touch.clientX;
-  const touchEndY = touch.clientY;
-
-
-  const diffX =
-    touchEndX - touchStartX;
-
-  const diffY =
-    touchEndY - touchStartY;
-
-
-  /*
-    세로 스크롤보다
-    가로 움직임이 클 때만 스와이프로 판단
-  */
-  if (Math.abs(diffX) <= Math.abs(diffY)) {
-    return;
-  }
-
-
-  /*
-    너무 짧게 움직인 건 무시
-  */
-  if (Math.abs(diffX) < swipeThreshold) {
-    return;
-  }
-
-
-  /*
-    ← 왼쪽으로 밀기
-    다음 작품
-  */
-  if (diffX < 0) {
-
-    goToProject(1);
-
-  }
-
-
-  /*
-    → 오른쪽으로 밀기
-    이전 작품
-  */
-  else {
-
-    goToProject(-1);
-
-  }
-
-});
-
-  // 처음 상태
-  updateCarousel(0);
-
-});
-

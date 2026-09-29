@@ -1,12 +1,13 @@
 /* ========================
-   WORKS
+   WORKS .three-thumbnail
 ======================== */
 
 .works {
+  position: relative;
+
   width: 100vw;
   height: 100vh;
 
-  position: relative;
   overflow: hidden;
 
   background:
@@ -33,11 +34,12 @@
 
   text-align: center;
 
-  z-index: 10;
+  z-index: 100;
 }
 
 .works-title span {
   font-size: 10px;
+
   letter-spacing: 4px;
 
   opacity: 0.4;
@@ -65,12 +67,24 @@
   width: 100%;
   height: 100%;
 
-  perspective: 1400px;
-
   overflow: hidden;
 
-  /* 모바일추가 */
-   touch-action: pan-y;
+  perspective: 1400px;
+
+  cursor: grab;
+
+  user-select: none;
+  -webkit-user-select: none;
+
+  /*
+    모바일에서 가로 드래그는 갤러리가 사용하고
+    세로 제스처는 브라우저가 사용할 수 있게
+  */
+  touch-action: pan-y;
+}
+
+.gallery-viewport.dragging {
+  cursor: grabbing;
 }
 
 
@@ -82,7 +96,9 @@
   position: absolute;
 
   /*
-    캐러셀 중심점
+    갤러리의 기준점
+
+    x = 0 → 화면 중앙
   */
   left: 50%;
   top: 54%;
@@ -95,342 +111,122 @@
 
 
 /* ========================
-   PROJECT CARD
+   PROJECT POSITION WRAPPER
 ======================== */
+
+/*
+  ★ 중요
+
+  project-card는 더 이상
+  시각적인 "카드"가 아님.
+
+  Three.js 이미지를
+  배치하기 위한 투명한 좌표 컨테이너.
+*/
 
 .project-card {
   position: absolute;
 
-  /*
-    기본 카드 크기
-
-    화면이 클수록 커지고
-    최대 430px
-  */
-  width: clamp(280px, 28vw, 430px);
-
   left: 0;
   top: 0;
 
-  cursor: pointer;
+  width: clamp(280px, 28vw, 430px);
+  aspect-ratio: 16 / 9;
 
+  /*
+    카드 형태 완전히 제거
+  */
+  background: transparent;
+  border: none;
+  border-radius: 0;
+
+  box-shadow: none;
+
+  /*
+    JS transform용
+  */
   transform-origin: center center;
   transform-style: preserve-3d;
 
   /*
-    위치/크기 transform은
-    JS에서 실시간으로 계산하므로
-    transform transition은 넣지 않음
+    이미지 선택 방지
   */
-
-  transition:
-    filter 0.3s ease,
-    opacity 0.3s ease;
-}
-
-
-/* ========================
-   PROJECT IMAGE
-======================== */
-
-.project-image {
-  position: relative;
-  border-radius: 8px;
-  width: 100%;
+  user-select: none;
+  -webkit-user-select: none;
 
   /*
-    ★ 1920 × 1080
-    정확히 16:9 비율
+    transform은 JS에서 매 프레임 계산하기 때문에
+    transition 사용하지 않음
   */
-  aspect-ratio: 16 / 9;
-
-  overflow: hidden;
-
-  background: #eeeeee;
-
-  box-shadow:
-    0 25px 60px rgba(0, 0, 0, 0.5);
-
-  transition:
-    box-shadow 0.4s ease;
-
-     /* ★ 아래쪽 거울 반사
-  -webkit-box-reflect:
-    below 8px
-    linear-gradient(
-      to bottom,
-      rgba(255, 255, 255, 0.18),
-      rgba(255, 255, 255, 0.06) 35%,
-      transparent 70%
-    ); */
+  transition: none;
 }
 
-
-.project-image img {
-  display: block;
-
-  width: 100%;
-  height: 100%;
-
-  object-fit: cover;
-}
-
-.project-reflection {
-  position: absolute;
-
-  /* 카드 이미지 바로 아래 */
-  top: calc(100% + 4px);
-  left: 0;
-
-  width: 100%;
-  height: 180px;
-
-  overflow: hidden;
-
-  pointer-events: none;
-  z-index: 0;
-
-  /* ★ 위쪽은 보이고 아래로 갈수록 완전히 사라짐 */
-  -webkit-mask-image: linear-gradient(
-    to bottom,
-    rgba(0, 0, 0, 0.75) 0%,
-    rgba(0, 0, 0, 0.50) 25%,
-    rgba(0, 0, 0, 0.22) 55%,
-    rgba(0, 0, 0, 0.06) 78%,
-    transparent 100%
-  );
-
-  mask-image: linear-gradient(
-    to bottom,
-    rgba(0, 0, 0, 0.75) 0%,
-    rgba(0, 0, 0, 0.50) 25%,
-    rgba(0, 0, 0, 0.22) 55%,
-    rgba(0, 0, 0, 0.06) 78%,
-    transparent 100%
-  );
-}
-
-
-.project-reflection {
-  position: absolute;
-
-  /* 카드 이미지 바로 아래 */
-  top: calc(100% + 4px);
-  left: 0;
-
-  width: 100%;
-  height: 180px;
-
-  overflow: hidden;
-
-  pointer-events: none;
-  z-index: 0;
-
-  /* ★ 위쪽은 보이고 아래로 갈수록 완전히 사라짐 */
-  -webkit-mask-image: linear-gradient(
-  to bottom,
-  transparent 0%,
-  rgba(0,0,0,.25) 8%,
-  rgba(0,0,0,.65) 18%,
-  rgba(0,0,0,.45) 28%,
-  rgba(0,0,0,.18) 60%,
-  rgba(0,0,0,.05) 80%,
-  transparent 100%
-);
-
-mask-image: linear-gradient(
-  to bottom,
-  transparent 0%,
-  rgba(0,0,0,.25) 8%,
-  rgba(0,0,0,.65) 18%,
-  rgba(0,0,0,.45) 28%,
-  rgba(0,0,0,.18) 60%,
-  rgba(0,0,0,.05) 80%,
-  transparent 100%
-);
-}
-
-
-.project-reflection img {
-  position: absolute;
-
-  left: 0;
-  bottom: 0;
-
-  width: 100%;
-  height: auto;
-
-  display: block;
-
-  /* ★ 이미지만 위아래 반전 */
-  transform: scaleY(-1);
-
-  transform-origin: center;
-
-  /* 너무 선명하지 않게 */
-  filter:
-    blur(5px)
-    saturate(1.1);
-
-  opacity: 0.25;
-}
 
 /* ========================
-   ACTIVE / CENTER CARD
+   THREE.JS THUMBNAIL
 ======================== */
 
 /*
-  현재 정중앙에 있는 작품
+  실제 화면에 보이는 것은
+  여기 들어가는 Three.js canvas뿐.
+*/
+
+.three-thumbnail {
+  position: absolute;
+
+  /*
+    원본 카드보다 canvas 자체를 크게 잡음
+    → 앞으로 튀어나올 공간 확보
+  */
+  width: 140%;
+  height: 140%;
+
+  left: -20%;
+  top: -20%;
+
+  background: transparent;
+
+  overflow: visible;
+
+  pointer-events: none;
+}
+
+
+/* ========================
+   THREE CANVAS
+======================== */
+
+.three-thumbnail canvas {
+  display: block;
+
+  width: 100% !important;
+  height: 100% !important;
+
+  background: transparent;
+
+  /*
+    canvas가 직접 pointer를 먹지 않고
+    gallery-viewport가 드래그 처리
+  */
+  pointer-events: none;
+
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
+}
+
+
+/* ========================
+   ACTIVE PROJECT
+======================== */
+
+/*
+  active는 시각적인 카드 효과가 아니라
+  겹침 순서 관리용으로만 사용.
 */
 
 .project-card.active {
   z-index: 100;
-}
-
-
-.project-card.active .project-image {
-  box-shadow:
-    0 40px 100px rgba(0, 0, 0, 0.8);
-}
-
-
-/* ========================
-   BACK CARD
-======================== */
-
-.project-card.back {
-  pointer-events: none;
-}
-
-
-/* ========================
-   CHIPS
-======================== */
-
-.chips {
-  position: absolute;
-
-  top: 14px;
-  left: 14px;
-
-  display: flex;
-
-  gap: 5px;
-
-  z-index: 5;
-}
-
-
-.chips span {
-  padding: 6px 9px;
-
-  border-radius: 30px;
-
-  background:
-    rgba(0, 0, 0, 0.75);
-
-  backdrop-filter:
-    blur(10px);
-
-  color: white;
-
-  font-size: 8px;
-
-  letter-spacing: 0.5px;
-}
-
-
-/* ========================
-   HOVER OVERLAY
-======================== */
-
-.project-hover {
-  position: absolute;
-
-  inset: 0;
-
-  display: flex;
-
-  align-items: center;
-  justify-content: center;
-
-  background:
-    rgba(0, 0, 0, 0.35);
-
-  opacity: 0;
-
-  transition:
-    opacity 0.35s ease;
-
-  z-index: 3;
-}
-
-
-.project-hover p {
-  font-size: 9px;
-
-  letter-spacing: 2px;
-
-  padding-bottom: 5px;
-
-  border-bottom:
-    1px solid white;
-}
-
-
-/*
-  Hover에서는 확대하지 않음.
-
-  VIEW PROJECT만 표시.
-*/
-
-.project-card:hover .project-hover {
-  opacity: 1;
-}
-
-
-/* ========================
-   PROJECT INFO
-======================== */
-
-.project-info {
-  position: relative;
-
-  margin-top: 17px;
-}
-
-
-.number {
-  position: absolute;
-
-  right: 0;
-  top: 2px;
-
-  font-size: 8px;
-
-  opacity: 0.35;
-}
-
-
-.project-info h2 {
-  margin: 0;
-
-  font-size:
-    clamp(12px, 1vw, 15px);
-
-  font-weight: 500;
-
-  letter-spacing: 0.5px;
-}
-
-
-.project-info p {
-  margin-top: 5px;
-
-  font-size:
-    clamp(8px, 0.7vw, 10px);
-
-  opacity: 0.4;
 }
 
 
@@ -442,11 +238,9 @@ mask-image: linear-gradient(
   position: absolute;
 
   bottom: 35px;
-
   left: 50%;
 
-  transform:
-    translateX(-50%);
+  transform: translateX(-50%);
 
   display: flex;
 
@@ -454,9 +248,10 @@ mask-image: linear-gradient(
 
   gap: 15px;
 
-  z-index: 10;
-}
+  z-index: 100;
 
+  pointer-events: none;
+}
 
 .gallery-guide span {
   font-size: 7px;
@@ -465,7 +260,6 @@ mask-image: linear-gradient(
 
   opacity: 0.3;
 }
-
 
 .guide-line {
   width: 60px;
@@ -484,7 +278,11 @@ mask-image: linear-gradient(
 
   .project-card {
     width:
-      clamp(260px, 27vw, 380px);
+      clamp(
+        260px,
+        27vw,
+        380px
+      );
   }
 
 }
@@ -498,7 +296,11 @@ mask-image: linear-gradient(
 
   .project-card {
     width:
-      clamp(230px, 30vw, 330px);
+      clamp(
+        230px,
+        30vw,
+        330px
+      );
   }
 
 }
@@ -516,14 +318,28 @@ mask-image: linear-gradient(
   }
 
 
-  .project-card {
-    width:
-      clamp(220px, 55vw, 300px);
+  .works-title {
+    top: 90px;
   }
 
 
-  .works-title {
-    top: 90px;
+  .project-card {
+    width:
+      clamp(
+        220px,
+        55vw,
+        300px
+      );
+  }
+
+
+  .gallery {
+    top: 52%;
+  }
+
+
+  .gallery-guide {
+    bottom: 25px;
   }
 
 }
