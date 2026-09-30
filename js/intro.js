@@ -243,7 +243,7 @@ const HEADER_LOGO_LEFT = 48;
    TRANSITION works
 ========================================================= */
 
-const TRANSITION_DURATION = 1000;
+const TRANSITION_DURATION = 2000;
 const LOGO_MOVE_DURATION = 900;
 
 
@@ -1646,15 +1646,12 @@ async function enterWorks() {
      WORKS 이동
   ======================================================= */
 
-  setTimeout(
-    () => {
+intro.style.transition = "opacity 0.2s ease";
+intro.style.opacity = "0";
 
-      window.location.href =
-        "./works.html";
-
-    },
-    100
-  );
+setTimeout(() => {
+  window.location.href = "./works.html";
+}, 200);
 }
 
 
