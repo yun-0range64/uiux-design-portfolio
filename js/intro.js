@@ -22,7 +22,7 @@ const webglContainer = document.querySelector("#introWebGL");
 
 
 /* =========================================================
-   SCENES
+   SCENES index
 ========================================================= */
 
 const cssScene = new THREE.Scene();
@@ -240,10 +240,10 @@ const HEADER_LOGO_LEFT = 48;
 
 
 /* =========================================================
-   TRANSITION
+   TRANSITION works
 ========================================================= */
 
-const TRANSITION_DURATION = 1800;
+const TRANSITION_DURATION = 1000;
 const LOGO_MOVE_DURATION = 900;
 
 
@@ -1386,7 +1386,7 @@ function spheresToLogo(duration) {
             ★ 중앙이 아니라
 
             처음부터 HEADER 위치의
-            YUNJU. 형태를 목표로 함
+            YUNJU. 형태를 목표로 함TRANSITION_DURATIO
           */
 
           const target =
@@ -1653,7 +1653,7 @@ async function enterWorks() {
         "./works.html";
 
     },
-    300
+    100
   );
 }
 
