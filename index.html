@@ -3,97 +3,45 @@
 
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
-  >
+  <title>YUNJU — Portfolio</title>
 
-  <title>Yunju — Portfolio</title>
-
-  <!-- 공통 CSS -->
-  <link
-    rel="stylesheet"
-    href="./css/common.css"
-  >
-
-  <!-- HOME CSS -->
-  <link
-    rel="stylesheet"
-    href="./css/home.css"
-  >
-
-  <!-- jQuery -->
-  <script
-    src="https://code.jquery.com/jquery-3.7.1.min.js">
-  </script>
-
-  <!-- HOME JS -->
-  <script
-    src="./js/home.js"
-    defer>
-  </script>
+  <link rel="stylesheet" href="./css/intro.css">
 </head>
-
 
 <body>
 
-  <main class="home">
+<main class="intro" id="intro">
 
-    <!-- 배경 인터랙션 -->
-    <div class="intro-visual">
+  <!-- 3D 흰색 구 -->
+  <div id="introWebGL"></div>
 
-      <div class="circle circle-1"></div>
-      <div class="circle circle-2"></div>
-      <div class="circle circle-3"></div>
+  <!-- 프로젝트 이미지 -->
+  <div id="introScene"></div>
 
-    </div>
+  <div class="intro-guide">
+    <span>SCROLL TO EXPLORE</span>
+    <span>CLICK TO ENTER</span>
+  </div>
 
-
-    <!-- 중앙 콘텐츠 -->
-    <section class="intro-content">
-
-      <p class="intro-label">
-        UX/UI · AI · RESEARCH
-      </p>
-
-      <h1 class="intro-title">
-        YUNJU.
-      </h1>
-
-      <p class="intro-description">
-        DESIGN PORTFOLIO
-      </p>
+</main>
 
 
-      <button
-        type="button"
-        class="works-button"
-      >
-        <span>VIEW WORKS</span>
-
-        <span class="arrow">
-          →
-        </span>
-      </button>
-
-    </section>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"
+    }
+  }
+  </script>
 
 
-    <!-- 하단 -->
-    <div class="intro-footer">
-
-      <span>
-        PORTFOLIO 2026
-      </span>
-
-      <span>
-        HWANG YUNJU
-      </span>
-
-    </div>
-
-  </main>
+  <script
+    type="module"
+    src="./js/intro.js"
+  ></script>
 
 </body>
 
